@@ -1,2 +1,2 @@
 # Hassan-flasky
-Social media blogging application 
+Social media blogging application project 
