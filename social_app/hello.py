@@ -57,6 +57,21 @@ class NameForm(FlaskForm):
 
 
 """
+In this sections we will use the shell context processor to automatically add some objects
+to our flask shell instead of manually importing them all the time
+"""
+@app.shell_context_processor
+def make_shell_context():
+    """
+    return a dctionary of the objects you want to be
+    automatically loaded
+    """
+    return {
+        'database': db,
+        'User': User,
+        'Role': Role,
+    }
+"""
 Now here lets define the routes for our small application
 """
 @app.errorhandler(404)
@@ -81,5 +96,5 @@ def index():
             session['known'] = True
         session['name'] = form.name.data
         return redirect(url_for('index'))
-    return render_template('index.html', form=form, name=session.get('name'), known=session.get('known', False))
+    return render_template('index.html', form=form, name=session.get('name'), known=session.get('known'))
 
