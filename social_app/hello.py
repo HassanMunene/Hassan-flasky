@@ -1,72 +1,63 @@
-from flask import Flask, render_template, session, redirect, url_for, flash
-from flask-bootstrap import Bootstrap
+from flask import Flask, render_template, session, redirect, url_for
+from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_wtf import FlaskForm
+from flask_sqlalchemy import SQLAlchemy
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
-from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'yoo this is my secret key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymsql://hassan:munene14347@localhost/flasky'
+app.config['SECRET_KEY'] = 'my sectret key'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://hassan:munene14347@localhost/flasky'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
 
 bootstrap = Bootstrap(app)
 moment = Moment(app)
 db = SQLAlchemy(app)
 
-"""
-Now In this next phase we will define the models that
-will be used to represent the tables in the database
-"""
-
 class Role(db.Model):
     """
-    This class will represent the roles table
-    in the database
+    the model that will map into roles table
     """
     __tablename__ = 'roles'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True)
-    users = db.relationship('User', backref='role')
+    users = db.Relationship('User', backref='role', lazy='dynamic')
 
     def __repr__(self):
         """
-        will show the string representation of the object
-        for debugging and logging purposes
+        string representation of the object
         """
-        return '<Role %r>' % self.name
+        return '<Role %r>' %self.name
 
 class User(db.Model):
     """
-    will be the table in the database called users
+    The model that will map into the users table
     """
-    __tablename__ = users
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, index=True)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
 
     def __repr__(self):
         """
-        string rep of the object
+        string representation of the object
         """
         return '<User %r>' %self.username
 
 """
-This next part we will be defining the forms that we will
-be using in our application
+This is the sections where we define the forms that we will be using now
 """
 class NameForm(FlaskForm):
     """
-    This will be the form for someone to input their name
+    the form for inserting the name
     """
-    name = StringField('What is your name', validators=[DataRequired()])
-    submit = SubmitField('submit')
+    name = StringField('What is your name?', validators=[DataRequired()])
+    submit = SubmitField('Submit')
+
 
 """
-after we have defined the data models, the forms now is time to actually
-define some route and view functions that will handle different routes
+Now here lets define the routes for our small application
 """
 @app.errorhandler(404)
 def page_not_found(e):
@@ -80,11 +71,15 @@ def internal_server_error(e):
 def index():
     form = NameForm()
     if form.validate_on_submit():
-        old_name = session.get('name')
-        if old_name is not None and old_name != form.name.data:
-            flash("Looks like you have changed your name buddy!")
+        user = User.query.filter_by(username=form.name.data).first()
+        if user is None:
+            user = User(username=form.name.data)
+            db.session.add(user)
+            db.session.commit()
+            session['known'] = False
+        else:
+            session['known'] = True
         session['name'] = form.name.data
         return redirect(url_for('index'))
-    return render_template('index.html', form=form, name=session.get('name'))
-
+    return render_template('index.html', form=form, name=session.get('name'), known=session.get('known', False))
 
