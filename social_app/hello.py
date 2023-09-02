@@ -8,6 +8,7 @@ from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_mail import Mail, Message
+from threading import Thread
 
 app = Flask(__name__)
 
@@ -72,12 +73,22 @@ class NameForm(FlaskForm):
     name = StringField("What's your name?", validators=[DataRequired()])
     submit = SubmitField('Submit')
 
+# I this section we will use the python threading module that we will use to create a new background thread that will handle the sending of mails hence sending emails asynchronously
+def send_async_email(app, msg):
+    """
+    create a new app_context that will handle emails
+    """
+    with app.app_context():
+        mail.send(msg)
+
 # This section we will define a function called send_email that will be used to send emails
 def send_email(to, subject, template, **kwargs):
     msg = Message(app.config['MAIL_SUBJECT'] + subject, sender=app.config['MAIL_SENDER'], recipients=[to])
     msg.body = render_template(template+'.txt', **kwargs)
     msg.html = render_template(template+'.html', **kwargs)
-    mail.send(msg)
+    thr = Thread(target=send_async_email, args=[app, msg])
+    thr.start()
+    return thr
 
 # Here we are defining the objects that will be automatically available to our shell when we load the flask shell
 @app.shell_context_processor
