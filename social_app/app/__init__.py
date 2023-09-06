@@ -20,8 +20,12 @@ def create_app(config_name):
     """
     app = Flask(__name__)
     app.config.from_object(config[config_name])
+
+    # this kasmall section is for registering blueprints
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)
+    from .auth_bp import auth as auth_blueprint
+    app.register_blueprint(auth_blueprint, url_prefix='/auth')
 
     bootstrap.init_app(app)
     mail.init_app(app)
