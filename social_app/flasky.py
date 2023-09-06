@@ -17,3 +17,12 @@ def make_shell_context():
         'User': User,
         'Role': Role
     }
+
+@app.cli.command()
+def test():
+    """
+    run the unit tests
+    """
+    import unittest
+    test = unittest.TestLoader().discover('tests')
+    unittest.TextTestRunner(verbosity=2).run(test)
