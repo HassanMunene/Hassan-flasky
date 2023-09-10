@@ -1,1 +1,13 @@
-<h1>Yooo bro you are in the auth blueprint</h1>
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block title %}Flasky - Login {% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h2>Login</h2>
+</div>
+<div class="col-md-4">
+{{ wtf.quick_form(form) }}
+</div>
+{% endblock %}

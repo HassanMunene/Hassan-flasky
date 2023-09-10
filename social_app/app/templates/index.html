@@ -5,12 +5,12 @@
 
 {% block page_content %}
 <div class="page-header">
-    <h1>Hello, {% if name %} {{ name }} {% else %} Stranger{% endif %}</h1>
-    {% if not known %}
+    {% if current_user.is_authenticated %}
+    <h1>Hello You have been logged in</h1>
     <p>Pleased to meet you</p>
     {% else %}
-    <p>Happy to see you again mate!</p>
+    <h1>You have been logged out</h1>
+    <p>Bye</p>
     {% endif %}
 </div>
-{{ wtf.quick_form(form) }}
 {% endblock %}

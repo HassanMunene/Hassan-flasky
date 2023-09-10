@@ -4,6 +4,7 @@ from flask_mail import Mail
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from config import config
+from flask_login import LoginManager
 
 # create extension instances but we will not initialize them because we
 # do not have an instance of our application
@@ -11,6 +12,8 @@ bootstrap = Bootstrap()
 mail = Mail()
 moment = Moment()
 db = SQLAlchemy()
+login_manager = LoginManager()
+login_manager.login_view = 'auth.login'
 
 # This next section we will define the factory function that will create the instance of the application
 # based on the configuration we want it to be in could be production, development or testing
@@ -31,5 +34,6 @@ def create_app(config_name):
     mail.init_app(app)
     moment.init_app(app)
     db.init_app(app)
+    login_manager.init_app(app)
 
     return app
