@@ -71,3 +71,41 @@ def confirm(token):
     else:
         flash('The confirmation link is invalid or has expired.')
     return redirect(url_for('main.index'))
+
+@auth.before_app_request
+def before_request():
+    """
+    this request hook will intercept request before they have been processed
+    by their view functions to check if the user carrying out the request
+    has his/her email confirmed. If the email is not confirmed and the
+    request is not heading to the auth blueprint and the static endpoint
+    then the request is directed to a different route to ensure that the
+    user is confirmed first
+    """
+    if current_user.is_authenticated \
+            and not current_user.confirmed \
+            and request.blueprint != 'auth' \
+            and request.endpoint != 'static':
+        return redirect(url_for('auth.unconfirmed'))
+
+@auth.route('/unconfirmed')
+def unconfirmed():
+    """
+    handle the situation where the user has not confirmed his/her
+    email and so they have to be given a way to confirm
+    """
+    if current_user.is_anonymous or current_user.confirmed:
+        return redirect(url_for('main.index'))
+    return render_template('auth/unconfirmed.html')
+
+@auth.route('/confirm')
+@login_required
+def resend_confirmation():
+    """
+    This will be the view function that will be invoked to resend the email
+    for confirmation
+    """
+    token = current_user.generate_email_confirm_token()
+    send_email(current_user.email, 'confirm Your account', 'auth/email/confirm', user=current_user, token=token)
+    flash('A new confirmation email has been sent to you by email.')
+    return redirect(url_for('main.index'))

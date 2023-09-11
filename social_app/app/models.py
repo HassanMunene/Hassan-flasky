@@ -1,7 +1,9 @@
+from flask import current_app
 from . import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from . import login_manager
+from itsdangerous.serializer import Serializer
 
 class Role(db.Model):
     """
@@ -24,6 +26,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), unique=True, index=True)
     email = db.Column(db.String(64), unique=True, index=True)
     password_hash = db.Column(db.String(128))
+    confirmed = db.Column(db.Boolean, default=False)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
 
     @property
@@ -50,6 +53,31 @@ class User(UserMixin, db.Model):
         werkzeug.security module
         """
         return check_password_hash(self.password_hash, password)
+
+    def generate_email_confirm_token(self):
+        """
+        This class method will be used sign the the user_id which in our
+        case is and return the signed token as a string
+        """
+        s = Serializer(current_app.config['SECRET_KEY'])
+        return s.dumps({'confirm': self.id})
+
+    def confirm_email(self, token):
+        """
+        This will take the signed token from the external source and then
+        check if actually it is legit and can be loaded back to the content
+        """
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except:
+            return False
+        if data.get('confirm') != self.id:
+            return False
+        self.confirmed = True
+        db.session.add(self)
+        return True
+
 
 @login_manager.user_loader
 def load_user(user_id):

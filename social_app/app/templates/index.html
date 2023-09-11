@@ -2,15 +2,3 @@
 {% import "bootstrap/wtf.html" as wtf %}
 
 {% block title %}Flasky - Home{% endblock %}
-
-{% block page_content %}
-<div class="page-header">
-    {% if current_user.is_authenticated %}
-    <h1>Hello You have been logged in</h1>
-    <p>Pleased to meet you</p>
-    {% else %}
-    <h1>You have been logged out</h1>
-    <p>Bye</p>
-    {% endif %}
-</div>
-{% endblock %}
