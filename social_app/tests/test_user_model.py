@@ -52,3 +52,29 @@ class UserModelTestCase(unittest.TestCase):
         u1.password = 'cat'
         u2.password = 'cat'
         self.assertTrue(u1.password_hash != u2.password_hash)
+
+    def test_user_role(self):
+        """
+        This will test that actually when a default user is
+        created, the user has the permisssions specified for
+        the User role
+        """
+        u = User(email='john@gmail.com', password='cat')
+        self.assertTrue(u.can(Permission.FOLLOW))
+        self.assertTrue(u.can(Permission.COMMENT))
+        self.assertTrue(u.can(Permission.WRITE))
+        self.assertFalse(u.can(Permission.MODERATE))
+        self.assertFalse(u.can(Permission.ADMIN))
+
+    def test_anonymous_user(self):
+        """
+        This test method will test if the anonymous user has any
+        permission assigned to him/her
+        """
+        u = AnonymousUser()
+
+        self.assertFalse(u.can(Permission.FOLLOW))
+        self.assertFalse(u.can(Permission.COMMENT))
+        self.assertFalse(u.can(Permission.WRITE))
+        self.assertFalse(u.can(Permission.MODERATE))
+        self.assertFalse(u.can(Permission.ADMIN))

@@ -1,9 +1,10 @@
 from flask import current_app
 from . import db
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import UserMixin
+from flask_login import UserMixin, AnonymousUserMixin
 from . import login_manager
 from itsdangerous.serializer import Serializer
+from datetime import datetime
 
 class Permission:
     FOLLOW = 1
@@ -12,7 +13,7 @@ class Permission:
     MODERATE = 8
     ADMIN = 16
 
-#---------------------------------------------------------------------------------------------------------------------------------------------
+#Role---------------------------------------------------------------------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------------------------------------------------
 class Role(db.Model):
     """
@@ -80,7 +81,8 @@ class Role(db.Model):
             db.session.add(role)
         db.session.commit()
 
-#--------------------------------------------------------------------------------------------------------------------------------------------#--------------------------------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------------------------------------
+#User--------------------------------------------------------------------------------------------------------------------------------------------
 class User(UserMixin, db.Model):
     """
     User model will be mapped onto the
@@ -91,9 +93,22 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, index=True)
     email = db.Column(db.String(64), unique=True, index=True)
+    name = db.Column(db.String(64))
+    location = db.Column(db.String(64))
+    about_me = db.Column(db.Text())
+    member_since = db.Column(db.DateTime(), default=datetime.utcnow)
+    last_seen = db.Column(db.DateTime(), default=datetime.utcnow)
     password_hash = db.Column(db.String(128))
     confirmed = db.Column(db.Boolean, default=False)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+
+    def __init__(self, **kwargs):
+        super(User, self).__init__(**kwargs)
+        if self.role is None:
+            if self.email == current_app.config['FLASKY_ADMIN']:
+                self.role = Role.query.filter_by(name='Administrator').first()
+            if self.role is None:
+                self.role = Role.query.filter_by(default=True).first()
 
     @property
     def password(self):
@@ -144,6 +159,30 @@ class User(UserMixin, db.Model):
         db.session.add(self)
         return True
 
+    def can(self, perm):
+        """
+        This will check whether a use has a certain permission
+        """
+        return self.role is not None and self.role.has_permission(perm)
+
+    def is_administrator(self):
+        """
+        check whether a certain user is an admin by checking
+        if they have the admin permission
+        """
+        return self.can(Permission.ADMIN)
+
+    def ping(self):
+        """
+        This method will update the last seen time everytime a user
+        accesses the application. so it keeps refreshing last_seen
+        and to keep this method updating all the time we will use the
+        before hook to call it from there
+        """
+        self.last_seen = datetime.utcnow()
+        db.session.add(self)
+        db.session.commit()
+
 #---------------------------------------------------------------------------------------------------------------------------------------------
 @login_manager.user_loader
 def load_user(user_id):
@@ -152,3 +191,17 @@ def load_user(user_id):
         from the db using the user_id
         """
         return User.query.get(int(user_id))
+
+#--------------------------------------------------------------------------------------------------------------------------------------------
+class AnonymousUser(AnonymousUserMixin):
+    """
+    This class will provide functionality for users that
+    have not yet been authenticated or rather logged in
+    """
+    def can(self, permission):
+        return False
+
+    def is_administrator(self):
+        return False
+
+login_manager.anonymous_user = AnonymousUser
