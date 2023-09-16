@@ -13,6 +13,10 @@ from .models import Permission
 from flask_login import current_user
 
 def permission_required(permission):
+    """
+    this decorator will ensure that the user satifies a certain
+    permission to carry the activity in the app
+    """
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -24,4 +28,8 @@ def permission_required(permission):
 
 
 def admin_required(f):
+    """
+    This decorater will ensure that the user carrying the
+    activity is infact an Administrator
+    """
     return permission_required(Permission.ADMIN)(f)

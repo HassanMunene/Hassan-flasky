@@ -4,6 +4,7 @@ testing the functionality of password hashing in our User model
 """
 import unittest
 from app.models import User
+from app.models import AnonymousUser, Permission
 
 class UserModelTestCase(unittest.TestCase):
     """
