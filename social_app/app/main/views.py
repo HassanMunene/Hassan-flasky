@@ -1,7 +1,7 @@
 from flask import session, render_template, url_for, redirect, current_app, flash
 from . import main
-from ..models import User, Role
-from .forms import EditProfileForm, EditProfileAdminForm
+from ..models import User, Role, Permission, Post
+from .forms import EditProfileForm, EditProfileAdminForm, PostForm
 from flask_login import current_user, login_required
 from .. import db
 from ..decorators import admin_required
@@ -12,7 +12,16 @@ def index():
     This view function will handle the root route
     for the app.
     """
-    return render_template('index.html')
+    form = PostForm()
+    if current_user.can(Permission.WRITE) and form.validate_on_submit():
+        post = Post()
+        post.body = form.body.data
+        post.author = current_user._get_current_object()
+        db.session.add(post)
+        db.session.commit()
+        return redirect(url_for('main.index'))
+    posts = Post.query.order_by(Post.timestamp.desc()).all()
+    return render_template('index.html', form=form, posts=posts)
 
 @main.route('/user/<username>', methods=['GET'])
 def user(username):
