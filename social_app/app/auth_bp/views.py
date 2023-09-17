@@ -110,3 +110,19 @@ def resend_confirmation():
     send_email(current_user.email, 'confirm Your account', 'auth/email/confirm', user=current_user, token=token)
     flash('A new confirmation email has been sent to you by email.')
     return redirect(url_for('main.index'))
+
+@auth.route('/change_password')
+@login_required
+def change_password():
+    """
+    handle the logic of changing password
+    """
+    return render_template('auth/change_password.html')
+
+@auth.route('/change_email')
+@login_required
+def change_email():
+    """
+    handle the logic of changing email
+    """
+    return render_template('auth/change_email.html')
