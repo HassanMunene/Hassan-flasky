@@ -1,4 +1,4 @@
-from flask import session, render_template, url_for, redirect, current_app, flash
+from flask import session, render_template, url_for, redirect, current_app, flash, abort
 from . import main
 from ..models import User, Role, Permission, Post
 from .forms import EditProfileForm, EditProfileAdminForm, PostForm
@@ -28,9 +28,15 @@ def user(username):
     """
     this view func will handle the route to see a specific
     user page eg http://<host>/user/john
+    it will show the profile page
+    it will also show the posts made by the user.
     """
-    user = User.query.filter_by(username=username).first_or_404()
-    return render_template('user.html', user=user)
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        abort(404)
+
+    posts = user.posts.order_by(Post.timestamp.desc()).all()
+    return render_template('user.html', user=user, posts=posts)
 
 @main.route('/edit-profile', methods=['GET', 'POST'])
 @login_required

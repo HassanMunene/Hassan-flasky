@@ -65,4 +65,4 @@ class PostForm(FlaskForm):
     post a blog by writing something and then posting it.
     """
     body = TextAreaField("What's on your mind?", validators=[DataRequired()])
-    submit = SubmitField('Submit')
+    submit = SubmitField('Post')
