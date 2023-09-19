@@ -1,4 +1,4 @@
-from flask import session, render_template, url_for, redirect, current_app, flash, abort
+from flask import session, render_template, url_for, redirect, current_app, flash, abort, request
 from . import main
 from ..models import User, Role, Permission, Post
 from .forms import EditProfileForm, EditProfileAdminForm, PostForm
@@ -20,8 +20,12 @@ def index():
         db.session.add(post)
         db.session.commit()
         return redirect(url_for('main.index'))
-    posts = Post.query.order_by(Post.timestamp.desc()).all()
-    return render_template('index.html', form=form, posts=posts)
+
+    items_per_page = 15
+    page = request.args.get('page', 1, type=int)
+    pagination = Post.query.order_by(Post.timestamp.desc()).paginate(page=page, per_page=items_per_page, error_out=False)
+    posts = pagination.items
+    return render_template('index.html', form=form, posts=posts, pagination=pagination)
 
 @main.route('/user/<username>', methods=['GET'])
 def user(username):

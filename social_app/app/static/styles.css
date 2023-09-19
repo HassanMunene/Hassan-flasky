@@ -140,3 +140,11 @@ div.flask-pagedown-preview h3 {
 .table.followers tr {
     border-bottom: 1px solid #e0e0e0;
 }
+
+/* this part will style the pagination */
+div.pagination {
+    width: 100%;
+    text-align: left;
+    padding: 0px;
+    margin: 0px;
+}
