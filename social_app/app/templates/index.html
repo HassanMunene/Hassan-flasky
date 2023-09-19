@@ -18,3 +18,12 @@
     {{ macros.pagination_widget(pagination, 'main.index') }}
 </div>
 {% endblock %}
+
+{#
+In this part of block script we are adding pagedown libraries from cdn
+to enable markdown preview
+#}
+{% block scripts %}
+{{ super() }}
+{{ pagedown.include_pagedown() }}
+{% endblock %}

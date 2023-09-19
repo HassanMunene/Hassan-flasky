@@ -2,6 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, TextAreaField, BooleanField, SelectField
 from wtforms.validators import DataRequired, Length, Email
 from ..models import Role, User
+from flask_pagedown.fields import PageDownField
 
 class NameForm(FlaskForm):
     """
@@ -63,6 +64,8 @@ class PostForm(FlaskForm):
     """
     It is from here that the author will be able to
     post a blog by writing something and then posting it.
+    in the body we will use PageDownField instead of TextAreaField to make
+    use of the markdown
     """
-    body = TextAreaField("What's on your mind?", validators=[DataRequired()])
+    body = PageDownField("What's on your mind?", validators=[DataRequired()])
     submit = SubmitField('Post')
