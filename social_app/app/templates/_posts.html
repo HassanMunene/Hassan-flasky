@@ -22,6 +22,11 @@
                 {{ post.body }}
                 {% endif %}
             </div>
+            <div class="post-footer">
+                <a href="{{ url_for('main.post', id=post.id) }}">
+                    <span class="badge bg-primary">share</span>
+                </a>
+            </div>
         </div>
     </li>
     {% endfor %}

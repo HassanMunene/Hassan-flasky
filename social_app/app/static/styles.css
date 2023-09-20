@@ -148,3 +148,7 @@ div.pagination {
     padding: 0px;
     margin: 0px;
 }
+/* The share link section */
+span.badge {
+    background-color: #337ab7;
+}
