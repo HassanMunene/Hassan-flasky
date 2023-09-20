@@ -148,7 +148,13 @@ div.pagination {
     padding: 0px;
     margin: 0px;
 }
-/* The share link section */
+/* The share and Edit link section */
 span.badge {
+    border-radius: 5px;
+}
+span.bg-primary{
     background-color: #337ab7;
+}
+span.bg-danger {
+    background-color: #df4759;
 }
