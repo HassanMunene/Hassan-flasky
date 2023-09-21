@@ -16,8 +16,18 @@ class Permission:
     MODERATE = 8
     ADMIN = 16
 
-#Role---------------------------------------------------------------------------------------------------------------------------------------------
-#---------------------------------------------------------------------------------------------------------------------------------------------
+class Follow(db.Model):
+    """
+    This is an association table that is used to represent the many to
+    many relationships between the users in terms of the followed and
+    the user followers.
+    """
+    __tablename__ = 'follows'
+    follower_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    followed_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    #Role-----------------------------------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------------------------------
 class Role(db.Model):
     """
     Role model will be mapped onto the
@@ -106,6 +116,8 @@ class User(UserMixin, db.Model):
     avatar_hash = db.Column(db.String(64))
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
     posts = db.relationship('Post', backref='author', lazy='dynamic')
+    followed = db.relationship('Follow', foreign_keys=[Follow.follower_id], backref=db.backref('follower', lazy='joined'), lazy='dynamic', cascade='all, delete-orphan')
+    followers = db.relationship('Follow', foreign_keys=[Follow.followed_id], backref=db.backref('followed', lazy='joined'), lazy='dynamic', cascade='all, delete-orphan')
 
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
@@ -201,6 +213,42 @@ class User(UserMixin, db.Model):
         hash = self.avatar_hash or self.gravatar_hash()
         return f'{url}/{hash}?s={size}&d={default}&r={rating}'
 
+    def is_following(self, user):
+        """
+        This helper method will return true if the current user is following the
+        user that has been specified otherwise it will return False
+        """
+        if user.id is None:
+            return False
+        return self.followed.filter_by(followed_id=user.id).first() is not None
+
+    def is_followed_by(self, user):
+        """
+        This helper method will return true if the current user is being followed
+        the user specified in the func. it will return true otherwise false
+        """
+        if user.id is None:
+            return False
+        return self.followers.filter_by(follower_id=user.id).first() is not None
+
+    def follow(self, user):
+        """
+        This is a helper method that will enable the current user to follow the
+        user specified in the method if not already following
+        """
+        if not self.is_following(user):
+            f = Follow(follower=self, followed=user)
+            db.session.add(f)
+
+    def unfollow(self, user):
+        """
+        This is a helper method that will enable the current user to unfollow the
+        user specified
+        """
+        f = self.followed.filter_by(followed_id=user.id).first()
+        if f:
+            db.session.delete(f)
+
 #---------------------------------------------------------------------------------------------------------------------------------------------
 @login_manager.user_loader
 def load_user(user_id):
@@ -251,3 +299,4 @@ class Post(db.Model):
         target.body_html = bleach.linkify(bleach.clean(markdown(value, output_format='html'), tags=allowed_tags, strip=True))
 
 db.event.listen(Post.body, 'set', Post.on_changed_body)
+

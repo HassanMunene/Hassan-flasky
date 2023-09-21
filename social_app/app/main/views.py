@@ -4,7 +4,7 @@ from ..models import User, Role, Permission, Post
 from .forms import EditProfileForm, EditProfileAdminForm, PostForm
 from flask_login import current_user, login_required
 from .. import db
-from ..decorators import admin_required
+from ..decorators import admin_required, permission_required
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
@@ -123,3 +123,73 @@ def edit(id):
         return redirect(url_for('main.post', id=post.id))
     form.body.data = post.body
     return render_template('edit_post.html', form=form)
+
+@main.route('/follow/<username>')
+@login_required
+@permission_required(Permission.FOLLOW)
+def follow(username):
+    """
+    This route will enable the currently logged in user to follow another user
+    by viewing the other users profile
+    it loads the requested user, verifies that it is valid and that it isn't
+    already followed by the logged in user, then calls the follow() helper func
+    to establish the link
+    """
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash('Invalid user.')
+        return redirect(url_for('main.index'))
+    if current_user.is_following(user):
+        flash('You are already following the user.')
+        return redirect(url_for('main.user', username=username))
+    current_user.follow(user)
+    db.session.commit()
+    flash('You are now following {}'.format(username))
+    return redirect(url_for('main.user', username=username))
+
+@main.route('/unfollow/<username>')
+@login_required
+@permission_required(Permission.FOLLOW)
+def unfollow(username):
+    """
+    This route will handle the opposite of following
+    """
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash('Invalid user.')
+        return redirect('main.index')
+    if not current_user.is_following(user):
+        flash('Your are not following this user.')
+        return redirect(url_for('main.user', username=username))
+    current_user.unfollow(user)
+    db.session.commit()
+    flash('You are now not following {} anymore.'.format(username))
+    return redirect(url_for('main.user', username=username))
+
+@main.route('/followers/<username>')
+def followers(username):
+    """
+    This route will be invoked when a user clicks another users follower count on
+    the profile page
+    """
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash('Invalid user.')
+        return redirect(url_for('main.index'))
+    page = request.args.get('page', 1, type=int)
+    pagination = user.followers.paginate(page=page, error_out=False)
+    follows = [{'user': item.follower, 'timestamp': item.timestamp}
+               for item in pagination.items]
+    return render_template('followers.html', user=user, title="Followers of ", endpoint='main.followers', pagination=pagination, follows=follows)
+
+@main.route('/followed_by/<username>')
+def followed_by(username):
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash('Invalid user.')
+        return redirect(url_for('main.index'))
+    page = request.args.get('page', 1, type=int)
+    pagination = user.followed.paginate(page=page, error_out=False)
+    follows = [{'user': item.followed, 'timestamp': item.timestamp}
+               for item in pagination.items]
+    return render_template('followers.html', user=user, title="Followed by", endpoint='main.followed_by', pagination=pagination, follows=follows)
