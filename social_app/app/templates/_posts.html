@@ -35,6 +35,11 @@
                     <span class="badge bg-danger">Edit [Admin]</span>
                 </a>
                 {% endif %}
+                <a href="{{ url_for('main.post', id=post.id) }}#comments">
+                    <span class="label label-primary">
+                        {{ post.comments.count() }} Comments
+                    </span>
+                </a>
             </div>
         </div>
     </li>

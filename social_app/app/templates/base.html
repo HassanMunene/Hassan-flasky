@@ -1,30 +1,32 @@
 {% extends "bootstrap/base.html" %}
 
-{% block title %}Flasky{% endblock %}
+{% block title %}KcaVibes - KcaVibes{% endblock %}
 
 {% block head %}
 {{ super() }}
-<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/x-icon">
-<link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/x-icon">
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='user_profile.css') }}">
+<link rel="shortcut icon" href="{{ url_for('static', filename='favicon/kcalogo-1.png') }}" type="image/x-icon">
+<link rel="icon" href="{{ url_for('static', filename='favicon/kcalogo-1.png') }}" type="image/x-icon">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/styles.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/user_profile.css') }}">
 {% endblock %}
 
 {% block navbar %}
-<div class="navbar navbar-inverse" role="navigation">
+<div class="navbar navbar-expand-lg navbar-light bg-light" role="navigation">
     <div class="container">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
                 <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
+                <span class="icon-bar" style="background-color: darkblue;"></span>
+                <span class="icon-bar" style="background-color: darkblue;"></span>
+                <span class="icon-bar" style="background-color: darkblue;"></span>
             </button>
-            <a class="navbar-brand" href="/">Flasky</a>
+            
+            <button type="button" class="btn btn-outline-info">
+                <a href="#">KcaVibes</a>
+            </button>
         </div>
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
-                <li><a href="{{ url_for('main.index') }}">Home</a></li>
                 {% if current_user.is_authenticated %}
                 <li><a href="{{ url_for('main.user', username=current_user.username) }}">Profile</a></li>
                 {% endif %}
@@ -43,7 +45,14 @@
                     </ul>
                 </li>
                 {% else %}
-                <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+                <li><a href="#">Our story</a></li>
+                <li><a href="#">Write</a></li>
+                <li><a href="{{ url_for('auth.login') }}">Sign in</a></li>
+                <li>
+                    <a href="{{ url_for('auth.login') }}">
+                        <button type="button" class="btn btn-primary me-3">Get started</button>
+                    </a>
+                </li>
                 {% endif %}
             </ul>
         </div>

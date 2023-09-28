@@ -1,5 +1,5 @@
-from flask import current_app, request
-from . import db
+from flask import current_app, request, url_for, jsonify
+from . import db, login_manager
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin
 from . import login_manager
@@ -8,6 +8,9 @@ from datetime import datetime
 import hashlib
 from markdown import markdown
 import bleach
+from app.exceptions import ValidationError
+import jwt
+import os
 
 class Permission:
     FOLLOW = 1
@@ -17,8 +20,7 @@ class Permission:
     ADMIN = 16
 
 class Follow(db.Model):
-    """
-    This is an association table that is used to represent the many to
+    """ This is an association table that is used to represent the many to
     many relationships between the users in terms of the followed and
     the user followers.
     """
@@ -118,6 +120,7 @@ class User(UserMixin, db.Model):
     posts = db.relationship('Post', backref='author', lazy='dynamic')
     followed = db.relationship('Follow', foreign_keys=[Follow.follower_id], backref=db.backref('follower', lazy='joined'), lazy='dynamic', cascade='all, delete-orphan')
     followers = db.relationship('Follow', foreign_keys=[Follow.followed_id], backref=db.backref('followed', lazy='joined'), lazy='dynamic', cascade='all, delete-orphan')
+    comments = db.relationship('Comment', backref='author', lazy='dynamic')
 
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
@@ -129,6 +132,7 @@ class User(UserMixin, db.Model):
                 self.role = Role.query.filter_by(name='Administrator').first()
             if self.role is None:
                 self.role = Role.query.filter_by(default=True).first()
+
     @property
     def password(self):
         """
@@ -153,6 +157,31 @@ class User(UserMixin, db.Model):
         werkzeug.security module
         """
         return check_password_hash(self.password_hash, password)
+
+    def generate_auth_token(self):
+        """
+        This method will generate an authentication token
+        that will be used to verify the user in each request
+        it uses JSON Web Tokens
+        """
+        token = jwt.encode(
+            {'confirm': self.id},
+            current_app.config['SECRET_KEY'],
+            algorithm = "HS256"
+        )
+        #token = token.token
+        return token
+
+    @staticmethod
+    def verify_auth_token(token):
+        """
+        verify the token is genuine and not expired
+        """
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        except:
+            return None
+        return User.query.get(data['id'])
 
     def generate_email_confirm_token(self):
         """
@@ -249,6 +278,32 @@ class User(UserMixin, db.Model):
         if f:
             db.session.delete(f)
 
+    @property
+    def followed_posts(self):
+        """
+        This has been defined as a property to retrive all the post made by the
+        followed users. So that the current user has an option to view post only by
+        the users they are following
+        it uses the join operation to carry out this operation
+        """
+        return Post.query.join(Follow, Follow.followed_id == Post.author_id).filter(Follow.follower_id == self.id)
+
+    def to_json(self):
+        """
+        convert the internal data to a json format for transportation of the
+        data
+        """
+        json_user = {
+            'url': url_for('api.get_user', id=self.id),
+            'username': self.username,
+            'member_since': self.member_since,
+            'last_seen': self.last_seen,
+            'posts_url': url_for('api.get_user_posts', id=self.id),
+            'followed_posts_url': url_for('api.get_user_followed_posts', id=self.id),
+            'post_count': self.posts.count()
+        }
+        return json_user
+
 #---------------------------------------------------------------------------------------------------------------------------------------------
 @login_manager.user_loader
 def load_user(user_id):
@@ -285,6 +340,7 @@ class Post(db.Model):
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     body_html = db.Column(db.Text)
+    comments = db.relationship('Comment', backref='post', lazy='dynamic')
 
     @staticmethod
     def on_changed_body(target, value, oldvalue, initiator):
@@ -298,5 +354,71 @@ class Post(db.Model):
                         'h1', 'h2', 'h3', 'p']
         target.body_html = bleach.linkify(bleach.clean(markdown(value, output_format='html'), tags=allowed_tags, strip=True))
 
+    def to_json(self):
+        """
+        retrive the posts and
+        represent the post data in json format for transportation
+        """
+        json_post = {
+            'url': url_for('api.get_post', id=self.id),
+            'body': self.body,
+            'body_html': self.body_html,
+            'timestamp': self.timestamp,
+            'author_url': url_for('api.get_user', id=self.author_id),
+            'comments_url': url_for('api.get_post_comments', id=self.id),
+            'comment_count': self.comments.count()
+        }
+        return json_post
+
+    @staticmethod
+    def from_json(json_post):
+        body = json_post.get('body')
+        if body is None or body == '':
+            raise ValidationError('post does not have a body')
+        return Post(body=body)
+
 db.event.listen(Post.body, 'set', Post.on_changed_body)
 
+#----------------------------------------------------------------------------------------
+#comments
+#-----------------------------------------------------------------------------------------
+class Comment(db.Model):
+    """
+    This model will be mapped to a comment table that will hold the comments
+    by different authors for different blog posts
+    """
+    __tablename__ = 'comments'
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'))
+
+    @staticmethod
+    def on_changed_body(target, value, oldvalue, initator):
+        """
+        This func will be registered as an event listener and when the body changes
+        it render markdown to html
+        """
+        allowed_tags = ['a', 'abbr', 'acronym', 'code', 'em', 'i', 'strong']
+        target.body_html = bleach.linkify(bleach.clean(markdown(value, output_format='html'), tags=allowed_tags, strip=True))
+
+    def to_json(self):
+        json_comment = {
+            'url': url_for('api.get_comment', id=self.id),
+            'post_url': url_for('api.get_post', id=self.post_id),
+            'body': self.body,
+            'body_html': self.body_html,
+            'timestamp': self.timestamp,
+            'author_url': url_for('api.get_user', id=self.author_id)
+        }
+        return json_comment
+    @staticmethod
+    def from_json(json_comment):
+        body = json_comment.get('body')
+        if body is None or body == '':
+            raise ValidationErro('comment does not have a body')
+        return Comment(body=body)
+
+db.event.listen(Comment.body, 'set', Comment.on_changed_body)

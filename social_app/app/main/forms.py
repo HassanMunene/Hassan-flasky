@@ -69,3 +69,10 @@ class PostForm(FlaskForm):
     """
     body = PageDownField("What's on your mind?", validators=[DataRequired()])
     submit = SubmitField('Post')
+
+class CommentForm(FlaskForm):
+    """
+    From here the user will be able to comment about a specific post
+    """
+    body = StringField('', validators=[DataRequired()])
+    submit = SubmitField('Comment')

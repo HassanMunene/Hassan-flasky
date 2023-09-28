@@ -1,7 +1,9 @@
 import os
+import datetime
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'yoo my boy benzi')
+    JWT_EXPIRATION = datetime.timedelta(days=1)
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', '587'))
     MAIL_USE_TLS = True
