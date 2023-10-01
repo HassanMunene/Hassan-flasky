@@ -4,6 +4,8 @@ from app import create_app, db
 from app.models import User, Role, Permission
 import sys
 import click
+from flask_migrate import upgrade
+from app.models import Role, User
 
 app = create_app(os.getenv('FLASK_CONFIG') or 'default')
 migrate = Migrate(app, db)
@@ -55,3 +57,4 @@ def test(coverage):
         COV.html_report(directory=covdir)
         print("HTML version: file://{}/index.html".format(covdir))
         COV.erase()
+
