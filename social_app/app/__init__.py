@@ -43,6 +43,10 @@ def create_app(config_name):
     app.register_blueprint(api_blueprint, url_prefix='/api/v1')
 
     # this other section we now initialize those extensions with the app we have created
+    if app.config['SSL_REDIRECT']:
+        from flask_sslify import SSLify
+        sslify = SSLify(app)
+
     bootstrap.init_app(app)
     mail.init_app(app)
     moment.init_app(app)

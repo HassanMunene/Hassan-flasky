@@ -13,6 +13,7 @@ class Config:
     MAIL_SENDER = 'Flasky Admin <awanzihassan@gmail.com>'
     FLASKY_ADMIN = os.environ.get('FLASKY_ADMIN', 'sultanhamud081@gmail.com')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SSL_REDIRECT = False
 
     @staticmethod
     def init_app(app):
@@ -29,6 +30,24 @@ class TestingConfig(Config):
 class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URL = os.environ.get('PROD_DATABASE_URI')
 
+class HerokuConfig(ProductionConfig):
+    """
+    This configuration will be used only when the app is deployed
+    on heroku
+    """
+    SSL_REDIRECT = True if os.environ.get('DYNO') else False
+
+    @classmethod
+    def init_app(cls, app):
+        ProductionConfig.init_app(app)
+
+        import logging
+        from werkzeug.contrib.fixers import ProxyFix
+        from logging import StreamHandler
+        file_handler = StreamHandler()
+        file_handler.setLevel(logging.INFO)
+        app.logger.addHandler(file_handler)
+        app.wsgi_app = ProxyFix(app.wsgi_app)
 
 config = {
     'development': DevelopmentConfig,
