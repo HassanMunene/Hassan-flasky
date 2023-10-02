@@ -58,3 +58,11 @@ def test(coverage):
         print("HTML version: file://{}/index.html".format(covdir))
         COV.erase()
 
+@app.cli.command()
+def deploy():
+    """
+    run deployment tasks
+    """
+    upgrade()
+    Role.insert_roles()
+    User.add_self_follows()

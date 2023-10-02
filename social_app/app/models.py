@@ -173,6 +173,14 @@ class User(UserMixin, db.Model):
         return token
 
     @staticmethod
+    def add_self_follows():
+        for user in User.query.all():
+            if not user.is_following(user):
+                user.follow(user)
+                db.session.add(user)
+                db.session.commit()
+
+    @staticmethod
     def verify_auth_token(token):
         """
         verify the token is genuine and not expired
