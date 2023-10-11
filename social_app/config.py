@@ -49,6 +49,22 @@ class HerokuConfig(ProductionConfig):
         app.logger.addHandler(file_handler)
         app.wsgi_app = ProxyFix(app.wsgi_app)
 
+class UnixConfig(ProductionConfig):
+    """
+    This method ensures that application log messages are sent
+    to the systems's syslog for monitoring and analysis
+    """
+    @classmethod
+    def init_app(cls, app):
+        ProductionConfig.init_app(app)
+
+        #log to syslog
+        import logging
+        from logging.handlers import SysLogHandler
+        syslog_handler = SysLogHandler()
+        syslog_handler.setLevel(logging.WARNING)
+        app.logger.addHandler(syslog_handler)
+
 config = {
     'development': DevelopmentConfig,
     'testing': TestingConfig,
