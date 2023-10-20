@@ -6,7 +6,6 @@ function properly
 we will use a factory function called create_app() that will inturn return the application once created
 """
 from flask import Flask, render_template
-from flask_bootstrap import Bootstrap
 from flask_mail import Mail
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
@@ -16,7 +15,6 @@ from flask_pagedown import PageDown
 
 # create extension instances but we will not initialize them because we
 # do not have an instance of our application yet
-bootstrap = Bootstrap()
 mail = Mail()
 moment = Moment()
 db = SQLAlchemy()
@@ -47,7 +45,6 @@ def create_app(config_name):
         from flask_sslify import SSLify
         sslify = SSLify(app)
 
-    bootstrap.init_app(app)
     mail.init_app(app)
     moment.init_app(app)
     db.init_app(app)

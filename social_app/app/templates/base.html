@@ -1,12 +1,5 @@
-{% extends "bootstrap/base.html" %}
 
 {% block title %}KcaVibes - KcaVibes{% endblock %}
-
-{% block head %}
-{{ super() }}
-<link rel="shortcut icon" href="{{ url_for('static', filename='favicon/kcalogo-1.png') }}" type="image/x-icon">
-<link rel="icon" href="{{ url_for('static', filename='favicon/kcalogo-1.png') }}" type="image/x-icon">
-{% endblock %}
 
 {% block navbar %}
 <div class="navbar navbar-expand-lg navbar-light bg-light" role="navigation">
@@ -68,9 +61,4 @@
     {% endfor %}
     {% block page_content %}{% endblock %}
 </div>
-{% endblock %}
-
-{% block scripts %}
-{{ super() }}
-{{ moment.include_moment() }}
 {% endblock %}
